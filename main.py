@@ -10,7 +10,7 @@ class MyApp(App):
         
         layout = BoxLayout(padding=10)
         btn = Button(
-            text="Heo, Android!",
+            text="walkquest tester button",
             size_hint=(1, 0.5),
             pos_hint={'center_x': 0.5, 'center_y': 0.5},
             background_color=(0.2, 0.6, 1, 1)  # Light blue color
