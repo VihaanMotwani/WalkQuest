@@ -1,2 +1,4 @@
-kivy>=2.2.0
-buildozer>=1.5.0
+kivy
+buildozer
+kivy-garden.mapview
+requests
