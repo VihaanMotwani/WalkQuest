@@ -3,6 +3,7 @@ from kivy.uix.screenmanager import ScreenManager
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.core.window import Window
+from kivy.graphics import Color, Rectangle
 
 # Import screens
 from screens.home_screen import HomeScreen
@@ -11,6 +12,7 @@ from screens.messages_screen import MessagesScreen
 from screens.profile_screen import ProfileScreen
 from screens.map_screen import MapScreen
 from screens.explore_screen import ExploreScreen
+from screens.route_screen import RouteScreen
 
 class NavigationBar(BoxLayout):
     def __init__(self, screen_manager, **kwargs):
@@ -19,38 +21,48 @@ class NavigationBar(BoxLayout):
         self.size_hint_y = 0.1
         self.screen_manager = screen_manager
         
-        # Create navigation buttons
+        # Dark theme background
+        with self.canvas.before:
+            Color(0.1, 0.1, 0.1, 1)  # Dark background
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+        self.bind(size=self._update_rect, pos=self._update_rect)
+        
+        # Navigation buttons matching mockup
         buttons = [
-            ('🏠', 'Home'),
-            ('🔍', 'Search'),
-            ('💬', 'Messages'),
-            ('👤', 'Profile')
+            ('Home', 'Home'),      # Start walk screen
+            ('Search', 'Search'),    # Explore screen
+            ('Chat', 'Messages'),  # Messages screen
+            ('Account', 'Profile')    # Account screen
         ]
         
-        for icon, screen in buttons:
-            # Create a separate function for each button to avoid closure issues
-            def make_callback(screen_name):
-                return lambda instance: setattr(self.screen_manager, 'current', screen_name)
-            
+        for text, screen in buttons:
             btn = Button(
-                text=f"{icon}\n{screen}",
-                on_press=make_callback(screen)
+                text=text,
+                background_color=(0, 0, 0, 0),  # Transparent background
+                color=(1, 1, 1, 1),  # White text
+                on_press=self._make_callback(screen)
             )
             self.add_widget(btn)
+    
+    def _make_callback(self, screen_name):
+        return lambda instance: setattr(self.screen_manager, 'current', screen_name)
+    
+    def _update_rect(self, instance, value):
+        self.rect.pos = instance.pos
+        self.rect.size = instance.size
 
 class WalkQuestApp(App):
     def build(self):
-        Window.clearcolor = (1, 1, 1, 1)
+        # Set dark theme
+        Window.clearcolor = (0.1, 0.1, 0.1, 1)  # Dark background
         
         sm = ScreenManager()
         
-        # Add all screens
-        sm.add_widget(HomeScreen(name='Home'))
-        sm.add_widget(SearchScreen(name='Search'))
+        # Add screens matching mockup flow
+        sm.add_widget(HomeScreen(name='Home'))       # Start walk screen
+        sm.add_widget(SearchScreen(name='Search'))   # Explore screen
         sm.add_widget(MessagesScreen(name='Messages'))
-        sm.add_widget(ProfileScreen(name='Profile'))
-        sm.add_widget(MapScreen(name='Map'))
-        sm.add_widget(ExploreScreen(name='Explore'))
+        sm.add_widget(ProfileScreen(name='Profile')) # Account screen
         
         layout = BoxLayout(orientation='vertical')
         layout.add_widget(sm)
