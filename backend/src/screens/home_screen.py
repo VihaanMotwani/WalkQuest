@@ -9,6 +9,8 @@ from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
 from plyer import gps
 import json
+import re
+import html
 
 # Dictionary mapping attraction names to image URLs
 ATTRACTION_IMAGES = {
@@ -42,10 +44,42 @@ class AttractionTile(BoxLayout):
             self.rect = Rectangle(size=self.size, pos=self.pos)
         self.bind(size=self._update_rect, pos=self._update_rect)
 
-        # Get attraction name
-        name = attraction_data['properties'].get('PAGETITLE', '')
-        if not name:
-            name = attraction_data['properties'].get('NAME', 'Unknown Location')
+        # Extract the name from the Description field
+        properties = attraction_data['properties']
+        raw_description = properties.get('Description', '')
+        name = self.extract_pagtitle(raw_description)
+
+        # Clean the name
+        name = self.clean_text(name)
+
+        # Name label
+        self.name_label = Label(
+            text=name,
+            size_hint_y=0.15,
+            font_size='18sp',
+            bold=True,
+            halign='left',
+            valign='middle',
+            text_size=(self.width, None)  # Allow text to wrap
+        )
+        self.name_label.bind(size=self.name_label.setter('text_size'))
+        self.add_widget(self.name_label)
+
+        # Extract and clean description from HTML
+        description = self.extract_description(raw_description)
+
+        # Clean the description
+        description = self.clean_text(description)
+
+        self.desc_label = Label(
+            text=description,
+            size_hint_y=0.25,
+            font_size='14sp',
+            halign='left',
+            valign='top'
+        )
+        self.desc_label.bind(size=self.desc_label.setter('text_size'))
+        self.add_widget(self.desc_label)
 
         # Image - use our dictionary instead of dataset URLs
         if name in ATTRACTION_IMAGES:
@@ -57,32 +91,6 @@ class AttractionTile(BoxLayout):
             )
             self.add_widget(self.image)
 
-        # Name label
-        self.name_label = Label(
-            text=name,
-            size_hint_y=0.15,
-            font_size='18sp',
-            bold=True,
-            halign='left',
-            valign='middle'
-        )
-        self.name_label.bind(size=self.name_label.setter('text_size'))
-        self.add_widget(self.name_label)
-
-        # Description
-        description = attraction_data['properties'].get('OVERVIEW', '')
-        if len(description) > 150:
-            description = description[:150] + "..."
-        self.desc_label = Label(
-            text=description,
-            size_hint_y=0.25,
-            font_size='14sp',
-            halign='left',
-            valign='top'
-        )
-        self.desc_label.bind(size=self.desc_label.setter('text_size'))
-        self.add_widget(self.desc_label)
-
         # Navigation button
         self.nav_button = Button(
             text='Go to this place',
@@ -91,6 +99,24 @@ class AttractionTile(BoxLayout):
         )
         self.nav_button.bind(on_press=lambda x: self.show_route(attraction_data))
         self.add_widget(self.nav_button)
+
+    def extract_pagtitle(self, raw_html):
+        # Use regex to extract the PAGETITLE text from HTML
+        match = re.search(r'<th>PAGETITLE<\/th> <td>([^<]+)<\/td>', raw_html)
+        if match:
+            return match.group(1)
+        return "Unnamed Location"
+
+    def extract_description(self, raw_html):
+        # Use regex to extract the description text from HTML
+        match = re.search(r'<th>OVERVIEW<\/th> <td>([^<]+)<\/td>', raw_html)
+        if match:
+            return match.group(1)
+        return "No description available"
+
+    def clean_text(self, text):
+        # Remove unwanted characters and apostrophes
+        return text.replace("'", "").replace("â", "").replace("€", "").replace("™", "")
 
     def _update_rect(self, instance, value):
         self.rect.pos = instance.pos
