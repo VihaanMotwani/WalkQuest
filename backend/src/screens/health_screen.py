@@ -10,6 +10,7 @@ import numpy as np
 import io
 from kivy.core.image import Image as CoreImage
 from services.step_tracker import StepTracker
+from kivy.graphics import Color, RoundedRectangle
 
 class HealthScreen(BaseScreen):
     def __init__(self, **kwargs):
@@ -58,30 +59,90 @@ class HealthScreen(BaseScreen):
         header.add_widget(title)
         header.add_widget(nav_box)
         
-        # Stats container
+        # Stats container with dark background and rounded corners
         stats_container = BoxLayout(
             orientation='horizontal',
-            size_hint_y=0.15,
+            size_hint_y=0.2,
             spacing=10,
-            padding=[0, 10]
+            padding=[20, 10]
         )
         
-        # Steps
-        steps_box = BoxLayout(orientation='vertical')
+        # Create a background box
+        stats_box = BoxLayout(
+            orientation='vertical',
+            padding=[15, 10],
+            spacing=5
+        )
+        stats_box.canvas.before.add(Color(0.12, 0.12, 0.12, 1))  # Dark gray
+        stats_box.canvas.before.add(RoundedRectangle(pos=stats_box.pos, size=stats_box.size, radius=[10,]))
+        
+        # Today label
+        today_label = Label(
+            text='TODAY',
+            font_size='14sp',
+            color=(0.7, 0.7, 0.7, 1),
+            size_hint_y=0.3,
+            halign='left'
+        )
+        today_label.bind(size=today_label.setter('text_size'))
+        
+        # Stats row
+        stats_row = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=0.7)
+        
+        # Steps column
+        steps_column = BoxLayout(orientation='horizontal', spacing=5)
         self.steps_value = Label(
             text='0',
             font_size='24sp',
-            color=(0, 0.7, 1, 1)
+            color=(1, 1, 1, 1)
         )
-        steps_label = Label(
-            text='Steps',
-            font_size='14sp',
+        steps_unit = Label(
+            text='steps in',
+            font_size='16sp',
             color=(0.7, 0.7, 0.7, 1)
         )
-        steps_box.add_widget(self.steps_value)
-        steps_box.add_widget(steps_label)
+        steps_column.add_widget(self.steps_value)
+        steps_column.add_widget(steps_unit)
         
-        stats_container.add_widget(steps_box)
+        # Time/calories column
+        time_cal_column = BoxLayout(orientation='horizontal', spacing=5)
+        self.time_value = Label(
+            text='0',
+            font_size='24sp',
+            color=(1, 1, 1, 1)
+        )
+        time_unit = Label(
+            text='minutes',
+            font_size='16sp',
+            color=(0.7, 0.7, 0.7, 1)
+        )
+        time_cal_column.add_widget(self.time_value)
+        time_cal_column.add_widget(time_unit)
+        
+        # Calories row
+        calories_row = BoxLayout(orientation='horizontal', spacing=5)
+        self.calories_value = Label(
+            text='0',
+            font_size='24sp',
+            color=(1, 1, 1, 1)
+        )
+        calories_unit = Label(
+            text='calories',
+            font_size='16sp',
+            color=(0.7, 0.7, 0.7, 1)
+        )
+        calories_row.add_widget(self.calories_value)
+        calories_row.add_widget(calories_unit)
+        
+        # Add everything to stats box
+        stats_box.add_widget(today_label)
+        stats_row.add_widget(steps_column)
+        stats_row.add_widget(time_cal_column)
+        stats_box.add_widget(stats_row)
+        stats_box.add_widget(calories_row)
+        
+        # Add stats box to container
+        stats_container.add_widget(stats_box)
         
         # Add all to main container
         self.container.add_widget(header)
@@ -110,6 +171,14 @@ class HealthScreen(BaseScreen):
         today_str = self.current_date.strftime('%Y-%m-%d')
         steps = self.step_tracker.get_steps_for_date(today_str)
         self.steps_value.text = str(steps)
+        
+        # Calculate and update calories (rough estimate: 0.04 calories per step)
+        calories = int(steps * 0.04)
+        self.calories_value.text = str(calories)
+        
+        # Calculate and update time (rough estimate: 1 minute per 100 steps)
+        minutes = int(steps / 100)
+        self.time_value.text = str(minutes)
         
         # Update graph
         self.update_graph()
