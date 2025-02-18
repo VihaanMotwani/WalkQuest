@@ -4,7 +4,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.button import Button
 from kivy.uix.label import Label
-from kivy.uix.image import AsyncImage
+from kivy.uix.image import AsyncImage, Image
 from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
 from plyer import gps
@@ -12,18 +12,18 @@ import json
 import re
 import html
 
-# Dictionary mapping attraction names to image URLs
-ATTRACTION_IMAGES = {
-    "National Gallery Singapore": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/arts/national-gallery-singapore-carousel-1.jpg",
-    "Sultan Mosque (Masjid Sultan) Singapore": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/culture-heritage/sultan-mosque-carousel-1.jpg",
-    "Sri Mariamman Temple": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/culture-heritage/sri-mariamman-temple-carousel-1.jpg",
-    "Gardens by the Bay": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/nature-wildlife/gardens-by-the-bay-carousel-1.jpg",
-    "Marina Bay Sands": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/recreation-leisure/marina-bay-sands-carousel-1.jpg",
-    "Singapore Flyer": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/recreation-leisure/singapore-flyer-carousel-1.jpg",
-    "Chinatown": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/culture-heritage/chinatown-carousel-1.jpg",
-    "Little India": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/culture-heritage/little-india-carousel-1.jpg",
-    "Singapore Botanic Gardens": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/nature-wildlife/singapore-botanic-gardens-carousel-1.jpg",
-    "Orchard Road": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/shopping/orchard-road-carousel-1.jpg"
+# Dictionary mapping attraction names to specific image filenames
+ATTRACTION_IMAGE_FILES = {
+    "National Gallery Singapore": "national_gallery_singapore.jpg",
+    "Sultan Mosque (Masjid Sultan) Singapore": "sultan_mosque.jpg",
+    "Sri Mariamman Temple": "sri_mariamman_temple.jpg",
+    "Gardens by the Bay": "gardens_by_the_bay.jpg",
+    "Marina Bay Sands": "marina_bay_sands.jpg",
+    "Singapore Flyer": "singapore_flyer.jpg",
+    "Chinatown": "chinatown.jpg",
+    "Little India": "little_india.jpg",
+    "Singapore Botanic Gardens": "singapore_botanic_gardens.jpg",
+    "Orchard Road": "orchard_road.jpg"
 }
 
 # Marina Bay Sands coordinates
@@ -81,10 +81,12 @@ class AttractionTile(BoxLayout):
         self.desc_label.bind(size=self.desc_label.setter('text_size'))
         self.add_widget(self.desc_label)
 
-        # Image - use our dictionary instead of dataset URLs
-        if name in ATTRACTION_IMAGES:
-            self.image = AsyncImage(
-                source=ATTRACTION_IMAGES[name],
+        # Load image from local directory using the mapping
+        image_filename = ATTRACTION_IMAGE_FILES.get(name, None)
+        if image_filename:
+            image_path = f'backend/src/screens/images/{image_filename}'
+            self.image = Image(
+                source=image_path,
                 size_hint_y=0.6,
                 allow_stretch=True,
                 keep_ratio=True
