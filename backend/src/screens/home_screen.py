@@ -16,14 +16,14 @@ import html
 ATTRACTION_IMAGE_FILES = {
     "National Gallery Singapore": "national_gallery_singapore.jpg",
     "Sultan Mosque (Masjid Sultan) Singapore": "sultan_mosque.jpg",
-    "Sri Mariamman Temple": "sri_mariamman_temple.jpg",
-    "Gardens by the Bay": "gardens_by_the_bay.jpg",
-    "Marina Bay Sands": "marina_bay_sands.jpg",
-    "Singapore Flyer": "singapore_flyer.jpg",
-    "Chinatown": "chinatown.jpg",
-    "Little India": "little_india.jpg",
-    "Singapore Botanic Gardens": "singapore_botanic_gardens.jpg",
-    "Orchard Road": "orchard_road.jpg"
+    "Sri Mariamman Temple: Hindu Temple in Singapore": "sri_mariamman_temple.jpg",
+    "Armenian Church in Singapore": "armenian_church.jpg",
+    "CHIJMES Singapore": "chijmes_singapore.jpg",
+    "St Andrews Cathedral- Singapore Architecture Landmark": "st_andrews_cathedral.jpg",
+    "Kreta Ayer Square": "kreta_ayer_square.jpg",
+    "Albert Mall Trishaw Park ": "albert_hall_trishaw_park.jpg",
+    "Chinatown Food Street ": "chinatown_food_street.jpg",
+    "Chinatown Heritage Centre, Singapore": "chinatown_heritage_centre_singapore.jpg"
 }
 
 # Marina Bay Sands coordinates
@@ -85,6 +85,7 @@ class AttractionTile(BoxLayout):
         image_filename = ATTRACTION_IMAGE_FILES.get(name, None)
         if image_filename:
             image_path = f'backend/src/screens/images/{image_filename}'
+            print(f"Loading image for {name}: {image_path}")  # Debugging output
             self.image = Image(
                 source=image_path,
                 size_hint_y=0.6,
@@ -92,6 +93,8 @@ class AttractionTile(BoxLayout):
                 keep_ratio=True
             )
             self.add_widget(self.image)
+        else:
+            print(f"No image found for {name}")
 
         # Navigation button
         self.nav_button = Button(
