@@ -2,3 +2,6 @@ kivy
 buildozer
 kivy-garden.mapview
 requests
+matplotlib
+numpy
+plyer

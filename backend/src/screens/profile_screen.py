@@ -4,6 +4,7 @@ from kivy.uix.label import Label
 from kivy.uix.floatlayout import FloatLayout
 from widgets.placeholders import ColorBoxLayout
 from .base_screen import BaseScreen
+from screens.health_screen import HealthScreen
 
 class ProfileScreen(BaseScreen):
     def __init__(self, **kwargs):
@@ -93,7 +94,8 @@ class ProfileScreen(BaseScreen):
                 color=(1, 1, 1, 1),
                 size_hint_y=None,
                 height='50dp',
-                halign='left'
+                halign='left',
+                on_press=self.handle_menu_option
             )
             menu.add_widget(btn)
         
@@ -102,3 +104,8 @@ class ProfileScreen(BaseScreen):
         container.add_widget(profile_section)  # Add profile section last to be on top
         
         self.add_widget(container) 
+
+    def handle_menu_option(self, instance):
+        if instance.text == 'Health':
+            self.manager.add_widget(HealthScreen(name='Health'))
+            self.manager.current = 'Health' 

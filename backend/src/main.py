@@ -13,6 +13,7 @@ from screens.profile_screen import ProfileScreen
 from screens.map_screen import MapScreen
 from screens.explore_screen import ExploreScreen
 from screens.route_screen import RouteScreen
+from screens.health_screen import HealthScreen
 
 class NavigationBar(BoxLayout):
     def __init__(self, screen_manager, **kwargs):
@@ -63,6 +64,7 @@ class WalkQuestApp(App):
         sm.add_widget(SearchScreen(name='Search'))   # Explore screen
         sm.add_widget(MessagesScreen(name='Messages'))
         sm.add_widget(ProfileScreen(name='Profile')) # Account screen
+        sm.add_widget(HealthScreen(name='Health'))  # Add HealthScreen
         
         layout = BoxLayout(orientation='vertical')
         layout.add_widget(sm)
