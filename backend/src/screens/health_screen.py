@@ -59,38 +59,27 @@ class HealthScreen(BaseScreen):
         header.add_widget(title)
         header.add_widget(nav_box)
         
-        # Stats container with dark background and rounded corners
+        # Stats container
         stats_container = BoxLayout(
-            orientation='horizontal',
+            orientation='vertical',
             size_hint_y=0.2,
             spacing=10,
             padding=[20, 10]
         )
-        
-        # Create a background box
-        stats_box = BoxLayout(
-            orientation='vertical',
-            padding=[15, 10],
-            spacing=5
-        )
-        stats_box.canvas.before.add(Color(0.12, 0.12, 0.12, 1))  # Dark gray
-        stats_box.canvas.before.add(RoundedRectangle(pos=stats_box.pos, size=stats_box.size, radius=[10,]))
         
         # Today label
         today_label = Label(
             text='TODAY',
             font_size='14sp',
             color=(0.7, 0.7, 0.7, 1),
-            size_hint_y=0.3,
             halign='left'
         )
-        today_label.bind(size=today_label.setter('text_size'))
         
-        # Stats row
-        stats_row = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=0.7)
+        # Top row with steps and time
+        top_row = BoxLayout(orientation='horizontal', spacing=20)
         
-        # Steps column
-        steps_column = BoxLayout(orientation='horizontal', spacing=5)
+        # Steps and time in one row
+        steps_row = BoxLayout(orientation='horizontal', spacing=5)
         self.steps_value = Label(
             text='0',
             font_size='24sp',
@@ -101,11 +90,8 @@ class HealthScreen(BaseScreen):
             font_size='16sp',
             color=(0.7, 0.7, 0.7, 1)
         )
-        steps_column.add_widget(self.steps_value)
-        steps_column.add_widget(steps_unit)
         
-        # Time/calories column
-        time_cal_column = BoxLayout(orientation='horizontal', spacing=5)
+        time_row = BoxLayout(orientation='horizontal', spacing=5)
         self.time_value = Label(
             text='0',
             font_size='24sp',
@@ -116,8 +102,6 @@ class HealthScreen(BaseScreen):
             font_size='16sp',
             color=(0.7, 0.7, 0.7, 1)
         )
-        time_cal_column.add_widget(self.time_value)
-        time_cal_column.add_widget(time_unit)
         
         # Calories row
         calories_row = BoxLayout(orientation='horizontal', spacing=5)
@@ -131,18 +115,25 @@ class HealthScreen(BaseScreen):
             font_size='16sp',
             color=(0.7, 0.7, 0.7, 1)
         )
+        
+        # Add widgets to their containers
+        steps_row.add_widget(self.steps_value)
+        steps_row.add_widget(steps_unit)
+        
+        time_row.add_widget(self.time_value)
+        time_row.add_widget(time_unit)
+        
         calories_row.add_widget(self.calories_value)
         calories_row.add_widget(calories_unit)
         
-        # Add everything to stats box
-        stats_box.add_widget(today_label)
-        stats_row.add_widget(steps_column)
-        stats_row.add_widget(time_cal_column)
-        stats_box.add_widget(stats_row)
-        stats_box.add_widget(calories_row)
+        # Add to top row
+        top_row.add_widget(steps_row)
+        top_row.add_widget(time_row)
         
-        # Add stats box to container
-        stats_container.add_widget(stats_box)
+        # Add everything to stats container
+        stats_container.add_widget(today_label)
+        stats_container.add_widget(top_row)
+        stats_container.add_widget(calories_row)
         
         # Add all to main container
         self.container.add_widget(header)
