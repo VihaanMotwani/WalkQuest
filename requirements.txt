@@ -5,3 +5,5 @@ requests
 matplotlib
 numpy
 plyer
+certifi
+urllib3

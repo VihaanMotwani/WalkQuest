@@ -1,64 +1,168 @@
+from kivy.uix.screenmanager import Screen
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.button import Button
 from kivy.uix.label import Label
-from kivy.uix.floatlayout import FloatLayout
-from .base_screen import BaseScreen
-from widgets.placeholders import ColorBoxLayout
+from kivy.uix.image import AsyncImage
+from kivy.core.window import Window
+from kivy.graphics import Color, Rectangle
+from plyer import gps
+import json
 
-class HomeScreen(BaseScreen):
+# Dictionary mapping attraction names to image URLs
+ATTRACTION_IMAGES = {
+    "National Gallery Singapore": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/arts/national-gallery-singapore-carousel-1.jpg",
+    "Sultan Mosque (Masjid Sultan) Singapore": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/culture-heritage/sultan-mosque-carousel-1.jpg",
+    "Sri Mariamman Temple": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/culture-heritage/sri-mariamman-temple-carousel-1.jpg",
+    "Gardens by the Bay": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/nature-wildlife/gardens-by-the-bay-carousel-1.jpg",
+    "Marina Bay Sands": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/recreation-leisure/marina-bay-sands-carousel-1.jpg",
+    "Singapore Flyer": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/recreation-leisure/singapore-flyer-carousel-1.jpg",
+    "Chinatown": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/culture-heritage/chinatown-carousel-1.jpg",
+    "Little India": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/culture-heritage/little-india-carousel-1.jpg",
+    "Singapore Botanic Gardens": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/nature-wildlife/singapore-botanic-gardens-carousel-1.jpg",
+    "Orchard Road": "https://www.visitsingapore.com/content/dam/desktop/global/see-do-singapore/shopping/orchard-road-carousel-1.jpg"
+}
+
+# Marina Bay Sands coordinates
+STARTING_LOCATION = (1.2847, 103.8610)  # Marina Bay Sands coordinates
+
+class AttractionTile(BoxLayout):
+    def __init__(self, attraction_data, **kwargs):
+        super().__init__(**kwargs)
+        self.orientation = 'vertical'
+        self.size_hint_y = None
+        self.height = 400
+        self.padding = [10, 10]
+        self.spacing = 5
+
+        # Card background
+        with self.canvas.before:
+            Color(0.15, 0.15, 0.15, 1)
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+        self.bind(size=self._update_rect, pos=self._update_rect)
+
+        # Get attraction name
+        name = attraction_data['properties'].get('PAGETITLE', '')
+        if not name:
+            name = attraction_data['properties'].get('NAME', 'Unknown Location')
+
+        # Image - use our dictionary instead of dataset URLs
+        if name in ATTRACTION_IMAGES:
+            self.image = AsyncImage(
+                source=ATTRACTION_IMAGES[name],
+                size_hint_y=0.6,
+                allow_stretch=True,
+                keep_ratio=True
+            )
+            self.add_widget(self.image)
+
+        # Name label
+        self.name_label = Label(
+            text=name,
+            size_hint_y=0.15,
+            font_size='18sp',
+            bold=True,
+            halign='left',
+            valign='middle'
+        )
+        self.name_label.bind(size=self.name_label.setter('text_size'))
+        self.add_widget(self.name_label)
+
+        # Description
+        description = attraction_data['properties'].get('OVERVIEW', '')
+        if len(description) > 150:
+            description = description[:150] + "..."
+        self.desc_label = Label(
+            text=description,
+            size_hint_y=0.25,
+            font_size='14sp',
+            halign='left',
+            valign='top'
+        )
+        self.desc_label.bind(size=self.desc_label.setter('text_size'))
+        self.add_widget(self.desc_label)
+
+        # Navigation button
+        self.nav_button = Button(
+            text='Go to this place',
+            size_hint_y=0.1,
+            background_color=(0.95, 0.75, 0.3, 1)
+        )
+        self.nav_button.bind(on_press=lambda x: self.show_route(attraction_data))
+        self.add_widget(self.nav_button)
+
+    def _update_rect(self, instance, value):
+        self.rect.pos = instance.pos
+        self.rect.size = instance.size
+
+    def show_route(self, attraction_data):
+        coords = attraction_data['geometry']['coordinates']
+        dest_lat, dest_lon = coords[1], coords[0]
+        
+        # Use Marina Bay Sands as starting point
+        current_lat, current_lon = STARTING_LOCATION
+        
+        maps_url = f"https://www.google.com/maps/dir/?api=1&origin={current_lat},{current_lon}&destination={dest_lat},{dest_lon}&travelmode=walking"
+        import webbrowser
+        webbrowser.open(maps_url)
+
+    def on_location(self, **kwargs):
+        # Called when GPS location is received
+        self.current_lat = kwargs['lat']
+        self.current_lon = kwargs['lon']
+        gps.stop()
+
+class HomeScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
-        # Main container
-        container = FloatLayout()
-        
-        # Location image (green placeholder for now)
-        image_box = ColorBoxLayout(
-            bg_color=(0.2, 0.5, 0.3, 1),
-            size_hint=(1, 0.7),
-            pos_hint={'top': 1}
-        )
-        
-        # Location info overlay
-        info_box = BoxLayout(
-            orientation='vertical',
-            size_hint=(1, 0.3),
-            pos_hint={'bottom': 0},
-            padding=[20, 20],
-            spacing=10
-        )
-        
-        location_name = Label(
-            text='Ubin Island',
-            font_size='24sp',
-            color=(1, 1, 1, 1),
-            halign='left',
-            size_hint_y=None,
-            height='30dp'
-        )
-        
-        description = Label(
-            text='A granite nature supported a few thousand settlers. Much of the original vegetation was cleared for the cultivation of rubber and crops like pineapple...',
-            color=(0.8, 0.8, 0.8, 1),
-            text_size=(None, None),
-            halign='left',
-            valign='top',
-            size_hint_y=None,
-            height='60dp'
-        )
-        
-        go_button = Button(
-            text='Go to this place',
-            size_hint_y=None,
-            height='50dp',
-            background_color=(1, 0.8, 0, 1),
-            color=(0, 0, 0, 1)
-        )
-        
-        info_box.add_widget(location_name)
-        info_box.add_widget(description)
-        info_box.add_widget(go_button)
-        
-        container.add_widget(image_box)
-        container.add_widget(info_box)
-        self.add_widget(container) 
+        self.load_attractions()
+
+    def load_attractions(self):
+        try:
+            # Main container
+            main_layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
+
+            # Header
+            header = Label(
+                text='Discover Singapore',
+                size_hint_y=0.1,
+                font_size='24sp',
+                bold=True
+            )
+            main_layout.add_widget(header)
+
+            # Scrollable grid for attractions
+            scroll = ScrollView(size_hint=(1, 0.9))
+            grid = GridLayout(
+                cols=1,
+                spacing=15,
+                size_hint_y=None,
+                padding=[10, 10]
+            )
+            # Important: This makes the grid scrollable
+            grid.bind(minimum_height=grid.setter('height'))
+
+            # Load and display attractions
+            with open('backend/src/data/TouristAttractions.geojson', 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                
+                # Create a card for each attraction
+                for feature in data['features'][:10]:  # Limit to first 10 for now
+                    tile = AttractionTile(feature)
+                    grid.add_widget(tile)
+
+            scroll.add_widget(grid)
+            main_layout.add_widget(scroll)
+            self.add_widget(main_layout)
+
+        except Exception as e:
+            # Add error display
+            error_layout = BoxLayout(orientation='vertical', padding=20)
+            error_label = Label(
+                text=f"Error loading attractions: {str(e)}",
+                color=(1, 0, 0, 1)  # Red text
+            )
+            error_layout.add_widget(error_label)
+            self.add_widget(error_layout)
+            print(f"Error: {str(e)}")  # Print to console for debugging 

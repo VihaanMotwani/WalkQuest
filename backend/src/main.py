@@ -1,5 +1,5 @@
 from kivy.app import App
-from kivy.uix.screenmanager import ScreenManager
+from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.core.window import Window
@@ -14,6 +14,7 @@ from screens.map_screen import MapScreen
 from screens.explore_screen import ExploreScreen
 from screens.route_screen import RouteScreen
 from screens.health_screen import HealthScreen
+from screens.attractions_screen import AttractionsScreen
 
 class NavigationBar(BoxLayout):
     def __init__(self, screen_manager, **kwargs):
@@ -65,6 +66,7 @@ class WalkQuestApp(App):
         sm.add_widget(MessagesScreen(name='Messages'))
         sm.add_widget(ProfileScreen(name='Profile')) # Account screen
         sm.add_widget(HealthScreen(name='Health'))  # Add HealthScreen
+        sm.add_widget(AttractionsScreen(name='attractions'))
         
         layout = BoxLayout(orientation='vertical')
         layout.add_widget(sm)
