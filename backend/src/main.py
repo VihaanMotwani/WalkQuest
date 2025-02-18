@@ -16,7 +16,7 @@ from screens.route_screen import RouteScreen
 
 class NavigationBar(BoxLayout):
     def __init__(self, screen_manager, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(**kwargs) 
         self.orientation = 'horizontal'
         self.size_hint_y = 0.1
         self.screen_manager = screen_manager
