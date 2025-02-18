@@ -41,6 +41,10 @@ class HealthScreen(BaseScreen):
             size_hint_x=0.3,
             on_press=self.previous_week
         )
+        self.date_label = Label(
+            text=self.get_date_range(),
+            size_hint_x=0.4
+        )
         right_arrow = Button(
             text='>',
             size_hint_x=0.3,
@@ -48,6 +52,7 @@ class HealthScreen(BaseScreen):
         )
         
         nav_box.add_widget(left_arrow)
+        nav_box.add_widget(self.date_label)
         nav_box.add_widget(right_arrow)
         
         header.add_widget(title)
@@ -90,9 +95,18 @@ class HealthScreen(BaseScreen):
         # Update initial values
         self.update_display()
     
+    def get_date_range(self):
+        """Get the date range string for current week"""
+        start = self.current_date - timedelta(days=self.current_date.weekday())
+        end = start + timedelta(days=6)
+        return f"{start.strftime('%d/%m')} - {end.strftime('%d/%m')}"
+    
     def update_display(self):
         """Update all display elements with current data"""
-        # Update step count
+        # Update date label
+        self.date_label.text = self.get_date_range()
+        
+        # Update step count for today
         today_str = self.current_date.strftime('%Y-%m-%d')
         steps = self.step_tracker.get_steps_for_date(today_str)
         self.steps_value.text = str(steps)
@@ -128,6 +142,9 @@ class HealthScreen(BaseScreen):
         self.container.add_widget(self.graph_image)
     
     def create_activity_graph(self, days, steps):
+        # Clear any existing plots
+        plt.clf()
+        
         # Create figure with dark background
         plt.style.use('dark_background')
         fig, ax = plt.subplots(figsize=(8, 4))
@@ -137,6 +154,13 @@ class HealthScreen(BaseScreen):
         # Create bar chart
         bars = ax.bar(days, steps, color='#4CAF50', alpha=0.7)
         
+        # Add value labels on top of each bar
+        for bar in bars:
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height,
+                   f'{int(height)}',
+                   ha='center', va='bottom', color='white')
+        
         # Customize the plot
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -145,8 +169,9 @@ class HealthScreen(BaseScreen):
         ax.tick_params(colors='white')
         ax.grid(True, axis='y', color='#333333', linestyle='-', alpha=0.2)
         
-        # Set y-axis limits
-        ax.set_ylim(0, 10000)
+        # Set y-axis limits based on data
+        max_steps = max(steps) if steps else 1000
+        ax.set_ylim(0, max_steps * 1.2)  # Add 20% padding
         
         # Remove axis labels
         ax.set_xlabel('')
@@ -163,7 +188,7 @@ class HealthScreen(BaseScreen):
         img_buf = CoreImage(buf, ext='png')
         
         # Clear the current figure
-        plt.close()
+        plt.close('all')
         
         # Create and return the Kivy Image widget
         return Image(texture=img_buf.texture, size_hint_y=0.4) 
