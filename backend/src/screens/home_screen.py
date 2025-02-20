@@ -11,6 +11,9 @@ from plyer import gps
 import json
 import re
 import html
+import webbrowser
+from kivy.utils import platform
+from .base_screen import BaseScreenWithEmergency
 
 # Dictionary mapping attraction names to specific image filenames
 ATTRACTION_IMAGE_FILES = {
@@ -135,7 +138,6 @@ class AttractionTile(BoxLayout):
         current_lat, current_lon = STARTING_LOCATION
         
         maps_url = f"https://www.google.com/maps/dir/?api=1&origin={current_lat},{current_lon}&destination={dest_lat},{dest_lon}&travelmode=walking"
-        import webbrowser
         webbrowser.open(maps_url)
 
     def on_location(self, **kwargs):
@@ -144,16 +146,13 @@ class AttractionTile(BoxLayout):
         self.current_lon = kwargs['lon']
         gps.stop()
 
-class HomeScreen(Screen):
+class HomeScreen(BaseScreenWithEmergency):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.load_attractions()
 
     def load_attractions(self):
         try:
-            # Main container
-            main_layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
-
             # Header
             header = Label(
                 text='Discover Singapore',
@@ -161,39 +160,98 @@ class HomeScreen(Screen):
                 font_size='24sp',
                 bold=True
             )
-            main_layout.add_widget(header)
+            self.content_layout.add_widget(header)
 
             # Scrollable grid for attractions
-            scroll = ScrollView(size_hint=(1, 0.9))
+            scroll = ScrollView(size_hint=(1, 0.8))  # Adjusted size hint to accommodate emergency button
             grid = GridLayout(
                 cols=1,
                 spacing=15,
                 size_hint_y=None,
                 padding=[10, 10]
             )
-            # Important: This makes the grid scrollable
             grid.bind(minimum_height=grid.setter('height'))
 
             # Load and display attractions
             with open('backend/src/data/TouristAttractions.geojson', 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 
-                # Create a card for each attraction
-                for feature in data['features'][:10]:  # Limit to first 10 for now
+                for feature in data['features'][:10]:
                     tile = AttractionTile(feature)
                     grid.add_widget(tile)
 
             scroll.add_widget(grid)
-            main_layout.add_widget(scroll)
-            self.add_widget(main_layout)
+            self.content_layout.add_widget(scroll)
 
         except Exception as e:
-            # Add error display
             error_layout = BoxLayout(orientation='vertical', padding=20)
             error_label = Label(
                 text=f"Error loading attractions: {str(e)}",
-                color=(1, 0, 0, 1)  # Red text
+                color=(1, 0, 0, 1)
             )
             error_layout.add_widget(error_label)
-            self.add_widget(error_layout)
-            print(f"Error: {str(e)}")  # Print to console for debugging 
+            self.content_layout.add_widget(error_layout)
+            print(f"Error: {str(e)}")
+
+    def trigger_emergency(self, instance):
+        """Handle emergency button press based on platform"""
+        if platform == 'android':
+            self.trigger_emergency_android()
+        else:
+            # For desktop/iOS, open emergency webpage
+            webbrowser.open('tel:999')  
+            print("Emergency feature is limited on desktop. Please use a phone to call emergency services.")
+
+    def trigger_emergency_android(self):
+        """Android-specific emergency handling"""
+        try:
+            from jnius import autoclass, cast
+            
+            # Get Android Activity and Context
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            activity = PythonActivity.mActivity
+            
+            # Intent to open emergency dialer
+            Intent = autoclass('android.content.Intent')
+            intent = Intent(Intent.ACTION_DIAL)
+            intent.setData(autoclass('android.net.Uri').parse('tel:999')) 
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            
+            # Start emergency call activity
+            activity.startActivity(intent)
+
+        except Exception as e:
+            print(f"Error triggering emergency: {str(e)}")
+            # Fallback to web browser
+            webbrowser.open('tel:999')  
+
+    def send_emergency_location(self, **kwargs):
+        try:
+            # Stop GPS after getting location
+            gps.stop()
+
+            # Get location
+            latitude = kwargs.get('lat', None)
+            longitude = kwargs.get('lon', None)
+
+            if latitude and longitude:
+                # Create emergency SMS intent
+                PythonActivity = autoclass('org.kivy.android.PythonActivity')
+                Intent = autoclass('android.content.Intent')
+                
+                # Emergency contact (should be configurable by user)
+                emergency_contact = "YOUR_EMERGENCY_CONTACT_NUMBER"
+                
+                # Create SMS intent
+                sms_intent = Intent(Intent.ACTION_SEND)
+                sms_intent.setType("text/plain")
+                sms_intent.putExtra(Intent.EXTRA_TEXT, 
+                    f"EMERGENCY! My current location: https://maps.google.com/?q={latitude},{longitude}")
+                sms_intent.putExtra("address", emergency_contact)
+                sms_intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                
+                # Send SMS
+                PythonActivity.mActivity.startActivity(sms_intent)
+
+        except Exception as e:
+            print(f"Error sending emergency location: {str(e)}") 
