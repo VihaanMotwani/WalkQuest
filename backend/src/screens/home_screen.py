@@ -29,8 +29,7 @@ ATTRACTION_IMAGE_FILES = {
     "Chinatown Heritage Centre, Singapore": "chinatown_heritage_centre_singapore.jpg"
 }
 
-# Marina Bay Sands coordinates
-STARTING_LOCATION = (1.2847, 103.8610)  # Marina Bay Sands coordinates
+STARTING_LOCATION = (1.2847, 103.8610)  
 
 class AttractionTile(BoxLayout):
     def __init__(self, attraction_data, **kwargs):
@@ -84,11 +83,10 @@ class AttractionTile(BoxLayout):
         self.desc_label.bind(size=self.desc_label.setter('text_size'))
         self.add_widget(self.desc_label)
 
-        # Load image from local directory using the mapping
         image_filename = ATTRACTION_IMAGE_FILES.get(name, None)
         if image_filename:
             image_path = f'backend/src/screens/images/{image_filename}'
-            print(f"Loading image for {name}: {image_path}")  # Debugging output
+            print(f"Loading image for {name}: {image_path}") 
             self.image = Image(
                 source=image_path,
                 size_hint_y=0.6,
@@ -99,7 +97,6 @@ class AttractionTile(BoxLayout):
         else:
             print(f"No image found for {name}")
 
-        # Navigation button
         self.nav_button = Button(
             text='Go to this place',
             size_hint_y=0.1,
@@ -109,21 +106,18 @@ class AttractionTile(BoxLayout):
         self.add_widget(self.nav_button)
 
     def extract_pagtitle(self, raw_html):
-        # Use regex to extract the PAGETITLE text from HTML
         match = re.search(r'<th>PAGETITLE<\/th> <td>([^<]+)<\/td>', raw_html)
         if match:
             return match.group(1)
         return "Unnamed Location"
 
     def extract_description(self, raw_html):
-        # Use regex to extract the description text from HTML
         match = re.search(r'<th>OVERVIEW<\/th> <td>([^<]+)<\/td>', raw_html)
         if match:
             return match.group(1)
         return "No description available"
 
     def clean_text(self, text):
-        # Remove unwanted characters and apostrophes
         return text.replace("'", "").replace("â", "").replace("€", "").replace("™", "")
 
     def _update_rect(self, instance, value):
@@ -134,14 +128,12 @@ class AttractionTile(BoxLayout):
         coords = attraction_data['geometry']['coordinates']
         dest_lat, dest_lon = coords[1], coords[0]
         
-        # Use Marina Bay Sands as starting point
         current_lat, current_lon = STARTING_LOCATION
         
         maps_url = f"https://www.google.com/maps/dir/?api=1&origin={current_lat},{current_lon}&destination={dest_lat},{dest_lon}&travelmode=walking"
         webbrowser.open(maps_url)
 
     def on_location(self, **kwargs):
-        # Called when GPS location is received
         self.current_lat = kwargs['lat']
         self.current_lon = kwargs['lon']
         gps.stop()
@@ -153,7 +145,6 @@ class HomeScreen(BaseScreenWithEmergency):
 
     def load_attractions(self):
         try:
-            # Header
             header = Label(
                 text='Discover Singapore',
                 size_hint_y=0.1,
@@ -162,8 +153,7 @@ class HomeScreen(BaseScreenWithEmergency):
             )
             self.content_layout.add_widget(header)
 
-            # Scrollable grid for attractions
-            scroll = ScrollView(size_hint=(1, 0.8))  # Adjusted size hint to accommodate emergency button
+            scroll = ScrollView(size_hint=(1, 0.8)) 
             grid = GridLayout(
                 cols=1,
                 spacing=15,
@@ -172,7 +162,6 @@ class HomeScreen(BaseScreenWithEmergency):
             )
             grid.bind(minimum_height=grid.setter('height'))
 
-            # Load and display attractions
             with open('backend/src/data/TouristAttractions.geojson', 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 
@@ -198,7 +187,6 @@ class HomeScreen(BaseScreenWithEmergency):
         if platform == 'android':
             self.trigger_emergency_android()
         else:
-            # For desktop/iOS, open emergency webpage
             webbrowser.open('tel:999')  
             print("Emergency feature is limited on desktop. Please use a phone to call emergency services.")
 
@@ -207,42 +195,36 @@ class HomeScreen(BaseScreenWithEmergency):
         try:
             from jnius import autoclass, cast
             
-            # Get Android Activity and Context
             PythonActivity = autoclass('org.kivy.android.PythonActivity')
             activity = PythonActivity.mActivity
             
-            # Intent to open emergency dialer
             Intent = autoclass('android.content.Intent')
             intent = Intent(Intent.ACTION_DIAL)
             intent.setData(autoclass('android.net.Uri').parse('tel:999')) 
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             
-            # Start emergency call activity
             activity.startActivity(intent)
 
         except Exception as e:
             print(f"Error triggering emergency: {str(e)}")
-            # Fallback to web browser
             webbrowser.open('tel:999')  
 
     def send_emergency_location(self, **kwargs):
         try:
-            # Stop GPS after getting location
             gps.stop()
 
-            # Get location
             latitude = kwargs.get('lat', None)
             longitude = kwargs.get('lon', None)
 
             if latitude and longitude:
-                # Create emergency SMS intent
+
                 PythonActivity = autoclass('org.kivy.android.PythonActivity')
                 Intent = autoclass('android.content.Intent')
                 
-                # Emergency contact (should be configurable by user)
+
                 emergency_contact = "YOUR_EMERGENCY_CONTACT_NUMBER"
                 
-                # Create SMS intent
+                
                 sms_intent = Intent(Intent.ACTION_SEND)
                 sms_intent.setType("text/plain")
                 sms_intent.putExtra(Intent.EXTRA_TEXT, 
@@ -250,7 +232,7 @@ class HomeScreen(BaseScreenWithEmergency):
                 sms_intent.putExtra("address", emergency_contact)
                 sms_intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 
-                # Send SMS
+                
                 PythonActivity.mActivity.startActivity(sms_intent)
 
         except Exception as e:
